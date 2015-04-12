@@ -1,10 +1,11 @@
 import org.scalatest._
 
+class GokataSpec extends FlatSpec {
 
+  val newGoGame = new NewGoGame(5, 5)
 
-class GokataSpec extends FlatSpec with Matchers{
-
-  "1. The board" should "be empty at the start of the game" in {
-    pending
+  "The move at the start of the game" must "be black" in {
+    assert(newGoGame.isLegalMove(Move(0, 0, BlackPiece)))
+    assert(!newGoGame.isLegalMove(Move(0, 0, WhitePiece)))
   }
 }
