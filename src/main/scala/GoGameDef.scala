@@ -14,8 +14,9 @@ trait GoGameDef {
   val rowCount: Int
   val colCount: Int
 
-  val currentBoard: BoardState
-  val nextPiece: Piece
+  val history: Vector[BoardState]
+
+  def currentBoardState: BoardState = history.last
 
   /**
    * Check whether a move is legal.
@@ -30,7 +31,7 @@ trait GoGameDef {
    * @return true if the move is legal, false otherwise
    */
   def isLegalMove(move: Move): Boolean = {
-    def isNextMove = move.piece == nextPiece
+    def isNextMove = move.piece == currentBoardState.nextPiece
     def isInsideBoard = 0 <= move.x && move.x < rowCount && 0 <= move.y && move.y < colCount
     isNextMove && isInsideBoard
   }
@@ -41,8 +42,9 @@ trait GoGameDef {
    * Board state class holds the state of all positions of the board
    * @param positions
    */
-  case class BoardState(val positions: Positions) {
+  case class BoardState(val positions: Positions, val nextPiece: Piece = BlackPiece) {
     require(positions.length == rowCount && positions(0).length == colCount)
+    require(nextPiece != Empty)
 
     /**
      * Constructor to create new game's board
