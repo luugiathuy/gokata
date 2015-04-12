@@ -31,7 +31,8 @@ trait GoGameDef {
    */
   def isLegalMove(move: Move): Boolean = {
     def isNextMove = move.piece == nextPiece
-    isNextMove
+    def isInsideBoard = 0 <= move.x && move.x < rowCount && 0 <= move.y && move.y < colCount
+    isNextMove && isInsideBoard
   }
 
   type Positions = Vector[Vector[Piece]]
