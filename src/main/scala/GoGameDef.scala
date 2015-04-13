@@ -10,7 +10,6 @@ case object WhitePiece extends Piece
 case class Move(val x: Int, val y: Int, val piece: Piece)
 
 trait GoGameDef {
-
   val rowCount: Int
   val colCount: Int
 
@@ -33,7 +32,9 @@ trait GoGameDef {
   def isLegalMove(move: Move): Boolean = {
     def isNextMove = move.piece == currentBoardState.nextPiece
     def isInsideBoard = 0 <= move.x && move.x < rowCount && 0 <= move.y && move.y < colCount
-    isNextMove && isInsideBoard
+    def isOccupiedPos = currentBoardState.positions(move.x)(move.y) != Empty
+
+    isNextMove && isInsideBoard && !isOccupiedPos
   }
 
   type Positions = Vector[Vector[Piece]]
