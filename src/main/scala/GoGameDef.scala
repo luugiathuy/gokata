@@ -2,12 +2,20 @@
  * A position on board can be occupied by BlackPiece,
  * WhitePiece, or not occupied yet (Empty)
  */
-sealed abstract class Piece
+sealed abstract class Piece {
+  val enemyPiece: Piece = Empty
+}
 case object Empty extends Piece
-case object BlackPiece extends Piece
-case object WhitePiece extends Piece
+case object BlackPiece extends Piece {
+  override val enemyPiece = WhitePiece
+}
+case object WhitePiece extends Piece {
+  override val enemyPiece = BlackPiece
+}
 
-case class Move(val x: Int, val y: Int, val piece: Piece)
+case class Move(val x: Int, val y: Int, val piece: Piece) {
+  require(piece != Empty)
+}
 
 trait GoGameDef {
   val rowCount: Int
@@ -31,13 +39,97 @@ trait GoGameDef {
    */
   def isLegalMove(move: Move): Boolean = {
     def isNextMove = move.piece == currentBoardState.nextPiece
-    def isInsideBoard = 0 <= move.x && move.x < rowCount && 0 <= move.y && move.y < colCount
     def isOccupiedPos = currentBoardState.positions(move.x)(move.y) != Empty
+    def isSelfCapture = {
+      val currentPositions = currentBoardState.positions
+      val newPositions = currentPositions.updated(move.x, currentPositions(move.x).updated(move.y, move.piece))
+      val enemyCapturedPieces = getCapturedPieces(newPositions, move.piece.enemyPiece)
+      if (!enemyCapturedPieces.isEmpty) {
+        false
+      }
+      else {
+        val ownCapturedPieces = getCapturedPieces(newPositions, move.piece)
+        !ownCapturedPieces.isEmpty
+      }
+    }
 
-    isNextMove && isInsideBoard && !isOccupiedPos
+    isNextMove && isInsideBoard(move.x, move.y) && !isOccupiedPos && !isSelfCapture
   }
 
+  /**
+   * Check whether a coordinate is inside the board
+   */
+  private def isInsideBoard(x: Int, y: Int) = 0 <= x && x < rowCount && 0 <= y && y < colCount
+
   type Positions = Vector[Vector[Piece]]
+
+  /**
+   * Given a board position, get all the captured pieces
+   * which are same type of the input piece
+   * @param positions
+   * @param piece
+   * @return A set contains coordinate positions of captured piece
+   */
+  private def getCapturedPieces(positions: Positions, piece: Piece): Set[(Int, Int)] = {
+
+    val adjacentMoves = List((-1, 0), (1, 0), (0, -1), (0, 1))
+
+    /**
+     * Get all connected-piecess components, which is same type of the input piece
+     */
+    def getConnectedPieces(): List[Set[(Int, Int)]] = {
+
+      val result = scala.collection.mutable.ListBuffer[Set[(Int, Int)]]()
+
+      val visited = scala.collection.mutable.Set[(Int, Int)]()
+
+      for {
+        i <- 0 until positions.length
+        j <- 0 until positions(i).length
+        if positions(i)(j) == piece && !(visited contains (i, j))
+      } {
+        var connected = Set[(Int, Int)]()
+
+        val queue = scala.collection.mutable.Queue[(Int, Int)]()
+        queue += ((i, j))
+        visited += ((i, j))
+
+        while (!queue.isEmpty) {
+          val pos = queue.dequeue
+          connected += pos
+
+          for {
+            move <- adjacentMoves
+            nextPos = (pos._1 + move._1, pos._2 + move._2)
+            if (isInsideBoard(nextPos._1,nextPos._2) && positions(nextPos._1)(nextPos._2) == piece
+              && !(visited.contains(nextPos)))
+          } {
+            queue += nextPos
+            visited += nextPos
+          }
+        }
+
+        result += connected
+      }
+
+      result.toList
+    }
+
+    /**
+     * Whether a connected-pieces component is surrounded by enemy
+     */
+    def isSurrounded(component: Set[(Int, Int)]): Boolean = {
+      for {
+        pos <- component
+        move <- adjacentMoves
+        nextPos = (pos._1 + move._1, pos._2 + move._2)
+        if isInsideBoard(nextPos._1, nextPos._2) && positions(nextPos._1)(nextPos._2) == Empty
+      } return false
+
+      true
+    }
+    getConnectedPieces().filter(isSurrounded).flatten.toSet
+  }
 
   /**
    * Board state class holds the state of all positions of the board
