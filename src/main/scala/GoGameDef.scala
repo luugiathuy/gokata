@@ -40,38 +40,65 @@ trait GoGameDef {
     def isNextMove = move.piece == currentBoardState.nextPiece
     def isOccupiedPos = currentBoardState.positions(move.x)(move.y) != Empty
     def isSelfCapture = {
-      val currentPositions = currentBoardState.positions
-      val newPositions = currentPositions.updated(move.x, currentPositions(move.x).updated(move.y, move.piece))
-      val capturedOpponentPieces = getCapturedPieces(newPositions, move.piece.opponentPiece)
+      val capturedOpponentPieces = getCapturedPieces(positionsWithMovePiece, move.piece.opponentPiece)
       if (capturedOpponentPieces.nonEmpty) {
+        // if the move captures opponent's pieces -> not self-capture move
         false
       }
       else {
-        val capturedOwnPieces = getCapturedPieces(newPositions, move.piece)
+        // if there is any captured piece of move.piece -> self-capture move
+        val capturedOwnPieces = getCapturedPieces(positionsWithMovePiece, move.piece)
         capturedOwnPieces.nonEmpty
       }
     }
 
-    isNextMove && isInsideBoard(move.x, move.y) && !isOccupiedPos && !isSelfCapture
+    def isSameAsPreviousState: Boolean = {
+      if (history.size < 2) false
+      else {
+        val newPosition = removeCapturedPieces(positionsWithMovePiece, move.piece.opponentPiece)
+        if (history.init.last.positions == newPosition) true else false
+      }
+    }
+
+    lazy val positionsWithMovePiece = positionsWhenPlaceMove(move)
+
+    isNextMove && isInsideBoard(move.x, move.y) && !isOccupiedPos && !isSelfCapture && !isSameAsPreviousState
   }
 
   def playMove(move: Move) = {
     require(isLegalMove(move), "Illegal move")
 
     // place the move's piece
-    val currentPositions = currentBoardState.positions
-    val positionsWithPiece = currentPositions.updated(move.x, currentPositions(move.x).
-      updated(move.y, move.piece))
+    val positionsWithMovePiece = positionsWhenPlaceMove(move)
 
     // remove captured opponent's pieces
-    val capturedPieces = getCapturedPieces(positionsWithPiece, move.piece.opponentPiece)
-    val newPositions = positionsWithPiece.zipWithIndex.map {
+    val newPositions = removeCapturedPieces(positionsWithMovePiece, move.piece.opponentPiece)
+
+    history = history :+ BoardState(newPositions, move.piece.opponentPiece)
+  }
+
+  /**
+   * Given a move, this functions returns new board's positions by
+   * simply placing the move's piece on its position
+   */
+  private def positionsWhenPlaceMove(move: Move): Positions = {
+    val currentPositions = currentBoardState.positions
+    currentPositions.updated(move.x, currentPositions(move.x).updated(move.y, move.piece))
+  }
+
+  /**
+   * Given a board position, and a type of piece,
+   * remove the captured pieces of that type from the positions
+   * @return the new positions after remove captured pieces
+   */
+  private def removeCapturedPieces(positions: Positions, piece: Piece): Positions = {
+    require(piece != Empty)
+    val capturedPieces = getCapturedPieces(positions, piece)
+    positions.zipWithIndex.map {
       case (rowPieces, i) => rowPieces.zipWithIndex.map {
         case (piece, j) => if (capturedPieces.contains((i, j))) Empty else piece
       }
     }
-
-    history = history :+ BoardState(newPositions, move.piece.opponentPiece)
   }
 
   /**
