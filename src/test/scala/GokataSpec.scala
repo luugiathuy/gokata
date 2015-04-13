@@ -2,25 +2,35 @@ import org.scalatest._
 
 class GokataSpec extends WordSpec {
 
-  "isLegalMove()" when {
-    val newGoGame = new NewGoGame(5, 5)
+  trait NewGoGame5x5 extends GoGameDef {
+    val rowCount = 5
+    val colCount = 5
+    history = history :+ StartBoard
+  }
 
+  "isLegalMove()" when {
     "at the start of the game" should {
       "be true if black's move" in {
-        assert(newGoGame.isLegalMove(Move(0, 0, BlackPiece)))
+        new NewGoGame5x5 {
+          isLegalMove(Move(0, 0, BlackPiece))
+        }
       }
 
       "be false if white's move" in {
-        assert(!newGoGame.isLegalMove(Move(0, 0, WhitePiece)))
+        new NewGoGame5x5 {
+          assert(!isLegalMove(Move(0, 0, WhitePiece)))
+        }
       }
     }
 
     "the move is outside the board's coordinate" must {
       "be false" in {
-        assert(!newGoGame.isLegalMove(Move(-1, 2, BlackPiece)))
-        assert(!newGoGame.isLegalMove(Move(3, -1, BlackPiece)))
-        assert(!newGoGame.isLegalMove(Move(5, 1, BlackPiece)))
-        assert(!newGoGame.isLegalMove(Move(4, 5, BlackPiece)))
+        new NewGoGame5x5 {
+          assert(!isLegalMove(Move(-1, 2, BlackPiece)))
+          assert(!isLegalMove(Move(3, -1, BlackPiece)))
+          assert(!isLegalMove(Move(5, 1, BlackPiece)))
+          assert(!isLegalMove(Move(4, 5, BlackPiece)))
+        }
       }
     }
 
@@ -137,33 +147,38 @@ class GokataSpec extends WordSpec {
 
   "playMove()" when {
     "the move is illegal" must {
-      "throws IllegalArgumentException" in {
+      "throw IllegalArgumentException" in {
         intercept[IllegalArgumentException] {
-          NewGoGame(5, 5).playMove(Move(0, 0, WhitePiece))
+          new NewGoGame5x5 {
+            playMove(Move(0, 0, WhitePiece))
+          }
         }
       }
     }
 
     "the move is legal" must {
-      "places the piece to board's position" in {
-        val game = NewGoGame(5, 5)
-        game.playMove(Move(2, 3, BlackPiece))
-        assert(game.currentBoardState.positions(2)(3) == BlackPiece)
+      "place the piece to board's position" in {
+        new NewGoGame5x5 {
+          playMove(Move(2, 3, BlackPiece))
+          assert(currentBoardState.positions(2)(3) == BlackPiece)
+        }
       }
 
-      "changes the next piece for next move" in {
-        val game = NewGoGame(5, 5)
-        game.playMove(Move(2, 3, BlackPiece))
-        assert(game.currentBoardState.nextPiece == WhitePiece)
+      "change the next piece for next move" in {
+        new NewGoGame5x5 {
+          playMove(Move(2, 3, BlackPiece))
+          assert(currentBoardState.nextPiece == WhitePiece)
+        }
       }
 
-      "adds new board state to history" in {
-        val game = NewGoGame(5, 5)
-        game.playMove(Move(2, 3, BlackPiece))
-        assert(game.history.size == 2)
+      "add new board state to history" in {
+        new NewGoGame5x5 {
+          playMove(Move(2, 3, BlackPiece))
+          assert(history.size == 2)
+        }
       }
 
-      "captures opponent pieces if they have no liberties" in {
+      "capture opponent pieces if they have no liberties" in {
         trait CapturedBoardGoGame extends StringParserGoGame {
           val board =
             """x
