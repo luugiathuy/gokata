@@ -137,7 +137,6 @@ trait GoGameDef {
    */
   case class BoardState(val positions: Positions, val nextPiece: Piece = BlackPiece) {
     require(positions.length == rowCount && positions(0).length == colCount)
-    require(nextPiece != Empty)
 
     /**
      * Constructor to create new game's board
