@@ -3,14 +3,14 @@
  * WhitePiece, or not occupied yet (Empty)
  */
 sealed abstract class Piece {
-  val enemyPiece: Piece = Empty
+  val opponentPiece: Piece = Empty
 }
 case object Empty extends Piece
 case object BlackPiece extends Piece {
-  override val enemyPiece = WhitePiece
+  override val opponentPiece = WhitePiece
 }
 case object WhitePiece extends Piece {
-  override val enemyPiece = BlackPiece
+  override val opponentPiece = BlackPiece
 }
 
 case class Move(val x: Int, val y: Int, val piece: Piece) {
@@ -43,8 +43,8 @@ trait GoGameDef {
     def isSelfCapture = {
       val currentPositions = currentBoardState.positions
       val newPositions = currentPositions.updated(move.x, currentPositions(move.x).updated(move.y, move.piece))
-      val capturedEnemyPieces = getCapturedPieces(newPositions, move.piece.enemyPiece)
-      if (!capturedEnemyPieces.isEmpty) {
+      val capturedOpponentPieces = getCapturedPieces(newPositions, move.piece.opponentPiece)
+      if (!capturedOpponentPieces.isEmpty) {
         false
       }
       else {
@@ -58,11 +58,21 @@ trait GoGameDef {
 
   def playMove(move: Move) = {
     require(isLegalMove(move), "Illegal move")
+
+    // place the move's piece
     val currentPositions = currentBoardState.positions
-    val positionsWithMovePiece = currentPositions.updated(move.x, currentPositions(move.x).
+    val positionsWithPiece = currentPositions.updated(move.x, currentPositions(move.x).
       updated(move.y, move.piece))
 
-    history = history :+ BoardState(positionsWithMovePiece, move.piece.enemyPiece)
+    // remove captured opponent's pieces
+    val capturedPieces = getCapturedPieces(positionsWithPiece, move.piece.opponentPiece)
+    val newPositions = positionsWithPiece.zipWithIndex.map {
+      case (rowPieces, i) => rowPieces.zipWithIndex.map {
+        case (piece, j) => if (capturedPieces.contains((i, j))) Empty else piece
+      }
+    }
+
+    history = history :+ BoardState(newPositions, move.piece.opponentPiece)
   }
 
   /**

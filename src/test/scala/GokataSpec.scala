@@ -153,6 +153,27 @@ class GokataSpec extends WordSpec {
         game.playMove(Move(2, 3, BlackPiece))
         assert(game.history.size == 2)
       }
+
+      "captures opponent pieces if they have no liberties" in {
+        trait CapturedBoardGoGame extends StringParserGoGame {
+          val board =
+            """x
+              |xx----
+              |ooooo-
+              |oxxxoo
+              |-xoxx-
+              |-oox--
+              |-xxx--
+            """.stripMargin
+          addBoardToHistory
+        }
+
+        new CapturedBoardGoGame {
+          playMove(Move(4, 0, BlackPiece))
+          assert(currentBoardState.positions.flatten.filter(p => p == WhitePiece).size == 8)
+          assert(currentBoardState.positions.flatten.filter(p => p == BlackPiece).size == 13)
+        }
+      }
     }
   }
 }
