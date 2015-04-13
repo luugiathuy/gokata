@@ -25,22 +25,27 @@ trait StringParserGoGame extends GoGameDef {
   val board: String
 
   private lazy val positions: Vector[Vector[Piece]] = {
-    def charToPiece(c: Char) = {
-      if (c == 'x') BlackPiece
-      else if (c == 'o') WhitePiece
-      else Empty
-    }
-    Vector(board.split("\n").drop(1).map(str => Vector(str: _*).map(c => charToPiece(c))): _*)
+    parseBoard(board)
   }
 
   lazy val rowCount = positions.length
-  lazy val colCount = positions(0).length
+  lazy val colCount = positions.head.length
 
   def addBoardToHistory = {
     history = {
       val nextPiece = if (board.charAt(0) == 'o') WhitePiece else BlackPiece
       Vector(BoardState(positions, nextPiece))
     }
+    true
+  }
+
+  protected def parseBoard(boardStr: String): Vector[Vector[Piece]] = {
+    def charToPiece(c: Char) = {
+      if (c == 'x') BlackPiece
+      else if (c == 'o') WhitePiece
+      else Empty
+    }
+    Vector(board.split("\n").drop(1).map(str => Vector(str: _*).map(c => charToPiece(c))): _*)
   }
 
 }

@@ -1,3 +1,3 @@
-case class NewGoGame(val rowCount: Int, val colCount: Int) extends GoGameDef {
+case class NewGoGame(rowCount: Int, colCount: Int) extends GoGameDef {
   history = history :+ StartBoard
 }

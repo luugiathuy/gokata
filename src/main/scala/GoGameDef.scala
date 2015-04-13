@@ -13,7 +13,7 @@ case object WhitePiece extends Piece {
   override val opponentPiece = BlackPiece
 }
 
-case class Move(val x: Int, val y: Int, val piece: Piece) {
+case class Move(x: Int, y: Int, piece: Piece) {
   require(piece != Empty, "Invalid piece, only BlackPiece or WhitePiece")
 }
 
@@ -34,7 +34,6 @@ trait GoGameDef {
    *    removed from the board before the liberties of your stone(s) are calculated
    * 5. You cannot place a stone to put the game back in the same position as it was
    *    on your last turn (this prevents infinite loops in play)
-   * @param move
    * @return true if the move is legal, false otherwise
    */
   def isLegalMove(move: Move): Boolean = {
@@ -44,12 +43,12 @@ trait GoGameDef {
       val currentPositions = currentBoardState.positions
       val newPositions = currentPositions.updated(move.x, currentPositions(move.x).updated(move.y, move.piece))
       val capturedOpponentPieces = getCapturedPieces(newPositions, move.piece.opponentPiece)
-      if (!capturedOpponentPieces.isEmpty) {
+      if (capturedOpponentPieces.nonEmpty) {
         false
       }
       else {
         val capturedOwnPieces = getCapturedPieces(newPositions, move.piece)
-        !capturedOwnPieces.isEmpty
+        capturedOwnPieces.nonEmpty
       }
     }
 
@@ -78,26 +77,26 @@ trait GoGameDef {
   /**
    * Check whether a coordinate is inside the board
    */
-  protected def isInsideBoard(x: Int, y: Int) = 0 <= x && x < rowCount && 0 <= y && y < colCount
+  protected def isInsideBoard(x: Int, y: Int): Boolean = {
+    0 <= x && x < rowCount && 0 <= y && y < colCount
+  }
 
   type Positions = Vector[Vector[Piece]]
 
   /**
    * Given a board position, get all the captured pieces
    * which are same type of the input piece
-   * @param positions
-   * @param piece
    * @return A set contains coordinate positions of captured piece
    */
   protected def getCapturedPieces(positions: Positions, piece: Piece): Set[(Int, Int)] = {
     require(piece != Empty)
 
-    val adjacentMoves = List((-1, 0), (1, 0), (0, -1), (0, 1))
+    val adjacentDisplacement = List((-1, 0), (1, 0), (0, -1), (0, 1))
 
     /**
      * Get all connected-pieces components, which is same type of the input piece
      */
-    def getConnectedPieces(): List[Set[(Int, Int)]] = {
+    def connectedPieces: List[Set[(Int, Int)]] = {
 
       val result = scala.collection.mutable.ListBuffer[Set[(Int, Int)]]()
 
@@ -114,15 +113,15 @@ trait GoGameDef {
         queue += ((i, j))
         visited += ((i, j))
 
-        while (!queue.isEmpty) {
-          val pos = queue.dequeue
+        while (queue.nonEmpty) {
+          val pos = queue.dequeue()
           connected += pos
 
           for {
-            move <- adjacentMoves
-            nextPos = (pos._1 + move._1, pos._2 + move._2)
+            delta <- adjacentDisplacement
+            nextPos = (pos._1 + delta._1, pos._2 + delta._2)
             if (isInsideBoard(nextPos._1,nextPos._2) && positions(nextPos._1)(nextPos._2) == piece
-              && !(visited.contains(nextPos)))
+              && !visited.contains(nextPos))
           } {
             queue += nextPos
             visited += nextPos
@@ -141,23 +140,22 @@ trait GoGameDef {
     def isSurrounded(component: Set[(Int, Int)]): Boolean = {
       for {
         pos <- component
-        move <- adjacentMoves
-        nextPos = (pos._1 + move._1, pos._2 + move._2)
+        delta <- adjacentDisplacement
+        nextPos = (pos._1 + delta._1, pos._2 + delta._2)
         if isInsideBoard(nextPos._1, nextPos._2) && positions(nextPos._1)(nextPos._2) == Empty
       } return false
 
       true
     }
 
-    getConnectedPieces().filter(isSurrounded).flatten.toSet
+    connectedPieces.filter(isSurrounded).flatten.toSet
   }
 
   /**
    * Board state class holds the state of all positions of the board
-   * @param positions
    */
-  case class BoardState(val positions: Positions, val nextPiece: Piece = BlackPiece) {
-    require(positions.length == rowCount && positions(0).length == colCount, "Invalid positions length")
+  case class BoardState(positions: Positions, nextPiece: Piece = BlackPiece) {
+    require(positions.length == rowCount && positions.head.length == colCount, "Invalid positions length")
 
     /**
      * Constructor to create new game's board

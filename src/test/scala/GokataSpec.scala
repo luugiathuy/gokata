@@ -104,13 +104,13 @@ class GokataSpec extends WordSpec {
           |xoox--
           |-xxx--
         """.stripMargin
-      addBoardToHistory
+
     }
 
     "piece param is BlackPiece" must {
       "return a set contains captured black pieces" in {
         new CapturedBoardGoGame {
-          val capturedPieces = getCapturedPieces(currentBoardState.positions, BlackPiece)
+          val capturedPieces = getCapturedPieces(parseBoard(board), BlackPiece)
           assert(capturedPieces == Set((0, 0), (0, 1)))
         }
       }
@@ -119,7 +119,7 @@ class GokataSpec extends WordSpec {
     "piece param is WhitePiece" must {
       "return a set contains capture white pieces" in {
         new CapturedBoardGoGame {
-          val capturedPieces = getCapturedPieces(currentBoardState.positions, WhitePiece)
+          val capturedPieces = getCapturedPieces(parseBoard(board), WhitePiece)
           assert(capturedPieces == Set((3, 2), (4, 1), (4, 2)))
         }
       }
@@ -137,19 +137,19 @@ class GokataSpec extends WordSpec {
 
     "the move is legal" must {
       "places the piece to board's position" in {
-        val game = NewGoGame(5, 5);
+        val game = NewGoGame(5, 5)
         game.playMove(Move(2, 3, BlackPiece))
         assert(game.currentBoardState.positions(2)(3) == BlackPiece)
       }
 
       "changes the next piece for next move" in {
-        val game = NewGoGame(5, 5);
+        val game = NewGoGame(5, 5)
         game.playMove(Move(2, 3, BlackPiece))
         assert(game.currentBoardState.nextPiece == WhitePiece)
       }
 
       "adds new board state to history" in {
-        val game = NewGoGame(5, 5);
+        val game = NewGoGame(5, 5)
         game.playMove(Move(2, 3, BlackPiece))
         assert(game.history.size == 2)
       }
@@ -170,8 +170,8 @@ class GokataSpec extends WordSpec {
 
         new CapturedBoardGoGame {
           playMove(Move(4, 0, BlackPiece))
-          assert(currentBoardState.positions.flatten.filter(p => p == WhitePiece).size == 8)
-          assert(currentBoardState.positions.flatten.filter(p => p == BlackPiece).size == 13)
+          assert(currentBoardState.positions.flatten.count(p => p == WhitePiece) == 8)
+          assert(currentBoardState.positions.flatten.count(p => p == BlackPiece) == 13)
         }
       }
     }
