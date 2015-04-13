@@ -14,7 +14,7 @@ case object WhitePiece extends Piece {
 }
 
 case class Move(val x: Int, val y: Int, val piece: Piece) {
-  require(piece != Empty)
+  require(piece != Empty, "Invalid piece, only BlackPiece or WhitePiece")
 }
 
 trait GoGameDef {
@@ -43,23 +43,27 @@ trait GoGameDef {
     def isSelfCapture = {
       val currentPositions = currentBoardState.positions
       val newPositions = currentPositions.updated(move.x, currentPositions(move.x).updated(move.y, move.piece))
-      val enemyCapturedPieces = getCapturedPieces(newPositions, move.piece.enemyPiece)
-      if (!enemyCapturedPieces.isEmpty) {
+      val capturedEnemyPieces = getCapturedPieces(newPositions, move.piece.enemyPiece)
+      if (!capturedEnemyPieces.isEmpty) {
         false
       }
       else {
-        val ownCapturedPieces = getCapturedPieces(newPositions, move.piece)
-        !ownCapturedPieces.isEmpty
+        val capturedOwnPieces = getCapturedPieces(newPositions, move.piece)
+        !capturedOwnPieces.isEmpty
       }
     }
 
     isNextMove && isInsideBoard(move.x, move.y) && !isOccupiedPos && !isSelfCapture
   }
 
+  def playMove(move: Move) = {
+    require(isLegalMove(move), "Illegal move")
+  }
+
   /**
    * Check whether a coordinate is inside the board
    */
-  private def isInsideBoard(x: Int, y: Int) = 0 <= x && x < rowCount && 0 <= y && y < colCount
+  protected def isInsideBoard(x: Int, y: Int) = 0 <= x && x < rowCount && 0 <= y && y < colCount
 
   type Positions = Vector[Vector[Piece]]
 
@@ -76,7 +80,7 @@ trait GoGameDef {
     val adjacentMoves = List((-1, 0), (1, 0), (0, -1), (0, 1))
 
     /**
-     * Get all connected-piecess components, which is same type of the input piece
+     * Get all connected-pieces components, which is same type of the input piece
      */
     def getConnectedPieces(): List[Set[(Int, Int)]] = {
 
@@ -138,7 +142,7 @@ trait GoGameDef {
    * @param positions
    */
   case class BoardState(val positions: Positions, val nextPiece: Piece = BlackPiece) {
-    require(positions.length == rowCount && positions(0).length == colCount)
+    require(positions.length == rowCount && positions(0).length == colCount, "Invalid positions length")
 
     /**
      * Constructor to create new game's board
