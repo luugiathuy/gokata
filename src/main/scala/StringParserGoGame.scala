@@ -36,8 +36,11 @@ trait StringParserGoGame extends GoGameDef {
   lazy val rowCount = positions.length
   lazy val colCount = positions(0).length
 
-  lazy val history = {
-    val nextPiece = if (board.charAt(0) == 'o') WhitePiece else BlackPiece
-    Vector(BoardState(positions, nextPiece))
+  def addBoardToHistory = {
+    history = {
+      val nextPiece = if (board.charAt(0) == 'o') WhitePiece else BlackPiece
+      Vector(BoardState(positions, nextPiece))
+    }
   }
+
 }

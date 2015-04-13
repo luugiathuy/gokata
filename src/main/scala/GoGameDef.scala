@@ -13,7 +13,7 @@ trait GoGameDef {
   val rowCount: Int
   val colCount: Int
 
-  val history: Vector[BoardState]
+  var history: Vector[BoardState] = Vector()
 
   def currentBoardState: BoardState = history.last
 

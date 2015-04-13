@@ -18,13 +18,14 @@ class GokataSpec extends FlatSpec {
 
   object SelfCaptureGame extends StringParserGoGame {
     val board =
-    """o
-      |-x---
-      |x----
-      |-----
-      |-----
-      |-----
-    """.stripMargin
+      """o
+        |-x---
+        |x----
+        |-----
+        |-----
+        |-----
+      """.stripMargin
+    addBoardToHistory
   }
   
   "The move" must "not be at occupied position" in {
@@ -33,7 +34,24 @@ class GokataSpec extends FlatSpec {
   }
 
   "The move" must "not be placed where it would be immediately captured" in {
-    val game = SelfCaptureGame;
+    val game = SelfCaptureGame
     assert(!game.isLegalMove(Move(0, 0, WhitePiece)))
+  }
+
+  object NonSelfCaptureGame extends StringParserGoGame {
+    val board =
+      """o
+        |-----
+        |-xo--
+        |x-xo-
+        |-xo--
+        |-----
+      """.stripMargin
+    addBoardToHistory
+  }
+
+  "The move" can "be placed where it capture enemy's positions, even its position has no liberty" in {
+    val game = NonSelfCaptureGame
+    assert(game.isLegalMove(Move(2, 1, WhitePiece)))
   }
 }
