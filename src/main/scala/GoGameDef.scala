@@ -29,11 +29,11 @@ trait GoGameDef {
    * Check whether a move is legal.
    * 1. Black places the first stone, after which White and Black alternate.
    * 2. Stones cannot be placed on occupied points.
-   * 3. No self-capture. Stones cannot be placed where they would be immediately captured
+   * 3. No self-capture. Stones cannot be placed where they would be immediately captured (Suicide rule)
    * 4. If placing a stone causes an opponent's stone to be captured, the opponents stones are
    *    removed from the board before the liberties of your stone(s) are calculated
    * 5. You cannot place a stone to put the game back in the same position as it was
-   *    on your last turn (this prevents infinite loops in play)
+   *    on your last turn (this prevents infinite loops in play) (ko rule)
    * @return true if the move is legal, false otherwise
    */
   def isLegalMove(move: Move): Boolean = {

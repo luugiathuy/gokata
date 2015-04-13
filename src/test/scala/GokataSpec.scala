@@ -5,42 +5,6 @@ class GokataSpec extends WordSpec {
   "isLegalMove()" when {
     val newGoGame = new NewGoGame(5, 5)
 
-    trait SelfCaptureGame1 extends StringParserGoGame {
-      val board =
-        """o
-          |-x---
-          |x----
-          |-----
-          |-----
-          |-----
-        """.stripMargin
-      addBoardToHistory
-    }
-
-    trait SelfCaptureGame2 extends StringParserGoGame {
-      val board =
-        """o
-          |-xx--
-          |x-ox-
-          |xoox-
-          |-xx--
-          |-----
-        """.stripMargin
-      addBoardToHistory
-    }
-
-    trait KoRuleGame extends StringParserGoGame {
-      val board =
-        """o
-          |-----
-          |-xo--
-          |x-xo-
-          |-xo--
-          |-----
-        """.stripMargin
-      addBoardToHistory
-    }
-
     "at the start of the game" should {
       "be true if black's move" in {
         assert(newGoGame.isLegalMove(Move(0, 0, BlackPiece)))
@@ -60,6 +24,18 @@ class GokataSpec extends WordSpec {
       }
     }
 
+    trait SelfCaptureGame1 extends StringParserGoGame {
+      val board =
+        """o
+          |-x---
+          |x----
+          |-----
+          |-----
+          |-----
+        """.stripMargin
+      addBoardToHistory
+    }
+
     "the move is on occupied position" must {
       "be false" in {
         new SelfCaptureGame1 {
@@ -76,7 +52,19 @@ class GokataSpec extends WordSpec {
       }
     }
 
-    "the move causes its connected group has no liberties (self-capturing)" must{
+    trait SelfCaptureGame2 extends StringParserGoGame {
+      val board =
+        """o
+          |-xx--
+          |x-ox-
+          |xoox-
+          |-xx--
+          |-----
+        """.stripMargin
+      addBoardToHistory
+    }
+
+    "the move causes its connected group has no liberties (self-capturing)" must {
       "be false" in {
         new SelfCaptureGame2 {
           assert(!isLegalMove(Move(1, 1, WhitePiece)))
@@ -84,10 +72,31 @@ class GokataSpec extends WordSpec {
       }
     }
 
+    trait KoRuleGame extends StringParserGoGame {
+      val board =
+        """o
+          |-----
+          |-xo--
+          |x-xo-
+          |-xo--
+          |-----
+        """.stripMargin
+      addBoardToHistory
+    }
+
     "the move captures enemy's positions, even its position has no liberties" should {
       "be true" in {
         new KoRuleGame {
           assert(isLegalMove(Move(2, 1, WhitePiece)))
+        }
+      }
+    }
+
+    "the move causes the board state return to previous position" must {
+      "be false" in {
+        new KoRuleGame {
+          playMove(Move(2, 1, WhitePiece))
+          assert(!isLegalMove(Move(2, 2, BlackPiece)))
         }
       }
     }
