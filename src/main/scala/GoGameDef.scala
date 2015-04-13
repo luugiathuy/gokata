@@ -70,7 +70,8 @@ trait GoGameDef {
    * @param piece
    * @return A set contains coordinate positions of captured piece
    */
-  private def getCapturedPieces(positions: Positions, piece: Piece): Set[(Int, Int)] = {
+  protected def getCapturedPieces(positions: Positions, piece: Piece): Set[(Int, Int)] = {
+    require(piece != Empty)
 
     val adjacentMoves = List((-1, 0), (1, 0), (0, -1), (0, 1))
 
@@ -128,6 +129,7 @@ trait GoGameDef {
 
       true
     }
+
     getConnectedPieces().filter(isSurrounded).flatten.toSet
   }
 
