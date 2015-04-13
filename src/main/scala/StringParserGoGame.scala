@@ -2,7 +2,7 @@
  * This trait implements a parser to define board states from a
  * graphical ASCII representation.
  *
- * When mixing in that component, a Go Game can be defined by
+ * When mixing in this trait, a Go Game can be defined by
  * defining the field `board` in the following form:
  *
  *   val board =

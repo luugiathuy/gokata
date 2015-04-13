@@ -65,6 +65,12 @@ trait GoGameDef {
     isNextMove && isInsideBoard(move.x, move.y) && !isOccupiedPos && !isSelfCapture && !isSameAsPreviousState
   }
 
+  /**
+   * Play a move on the board, captured no-liberty opponent's pieces,
+   * add new board state to history
+   * If a move is illegal, an IllegalArgumentException exeption will be thrown
+   * @param move
+   */
   def playMove(move: Move) = {
     require(isLegalMove(move), "Illegal move")
 
@@ -121,7 +127,7 @@ trait GoGameDef {
     val adjacentDisplacement = List((-1, 0), (1, 0), (0, -1), (0, 1))
 
     /**
-     * Get all connected-pieces components, which is same type of the input piece
+     * Get all connected-components pieces, which are same type of the input piece
      */
     def connectedPieces: List[Set[(Int, Int)]] = {
 
