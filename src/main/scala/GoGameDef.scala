@@ -58,6 +58,11 @@ trait GoGameDef {
 
   def playMove(move: Move) = {
     require(isLegalMove(move), "Illegal move")
+    val currentPositions = currentBoardState.positions
+    val positionsWithMovePiece = currentPositions.updated(move.x, currentPositions(move.x).
+      updated(move.y, move.piece))
+
+    history = history :+ BoardState(positionsWithMovePiece, move.piece.enemyPiece)
   }
 
   /**

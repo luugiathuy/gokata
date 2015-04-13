@@ -2,9 +2,8 @@ import org.scalatest._
 
 class GokataSpec extends WordSpec {
 
-  val newGoGame = new NewGoGame(5, 5)
-
   "isLegalMove()" when {
+    val newGoGame = new NewGoGame(5, 5)
 
     trait SelfCaptureGame1 extends StringParserGoGame {
       val board =
@@ -131,8 +130,28 @@ class GokataSpec extends WordSpec {
     "the move is illegal" must {
       "throws IllegalArgumentException" in {
         intercept[IllegalArgumentException] {
-          newGoGame.playMove(Move(0, 0, WhitePiece))
+          NewGoGame(5, 5).playMove(Move(0, 0, WhitePiece))
         }
+      }
+    }
+
+    "the move is legal" must {
+      "places the piece to board's position" in {
+        val game = NewGoGame(5, 5);
+        game.playMove(Move(2, 3, BlackPiece))
+        assert(game.currentBoardState.positions(2)(3) == BlackPiece)
+      }
+
+      "changes the next piece for next move" in {
+        val game = NewGoGame(5, 5);
+        game.playMove(Move(2, 3, BlackPiece))
+        assert(game.currentBoardState.nextPiece == WhitePiece)
+      }
+
+      "adds new board state to history" in {
+        val game = NewGoGame(5, 5);
+        game.playMove(Move(2, 3, BlackPiece))
+        assert(game.history.size == 2)
       }
     }
   }
