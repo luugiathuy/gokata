@@ -62,7 +62,8 @@ trait GoGameDef {
 
     lazy val positionsWithMovePiece = positionsWhenPlaceMove(move)
 
-    isNextMove && isInsideBoard(move.x, move.y) && !isOccupiedPos && !isSelfCapture && !isSameAsPreviousState
+    (isNextMove && isInsideBoard(move.x, move.y) && !isOccupiedPos &&
+      !isSelfCapture && !isSameAsPreviousState)
   }
 
   /**
@@ -124,7 +125,10 @@ trait GoGameDef {
   protected def getCapturedPieces(positions: Positions, piece: Piece): Set[(Int, Int)] = {
     require(piece != Empty)
 
-    val adjacentDisplacement = List((-1, 0), (1, 0), (0, -1), (0, 1))
+    def neighbors(x: Int, y: Int): List[(Int, Int)] = {
+      val neighborDisplacement = List((-1, 0), (1, 0), (0, -1), (0, 1))
+      neighborDisplacement map { case (dx, dy) => (x + dx, y + dy) }
+    }
 
     /**
      * Get all connected-components pieces, which are same type of the input piece
@@ -151,13 +155,12 @@ trait GoGameDef {
           connected += pos
 
           for {
-            delta <- adjacentDisplacement
-            nextPos = (pos._1 + delta._1, pos._2 + delta._2)
-            if (isInsideBoard(nextPos._1,nextPos._2) && positions(nextPos._1)(nextPos._2) == piece
-              && !visited.contains(nextPos))
+            neighborPos <- neighbors(pos._1, pos._2)
+            if (isInsideBoard(neighborPos._1, neighborPos._2) && positions(neighborPos._1)(neighborPos._2) == piece
+              && !visited.contains(neighborPos))
           } {
-            queue += nextPos
-            visited += nextPos
+            queue += neighborPos
+            visited += neighborPos
           }
         }
 
@@ -173,9 +176,8 @@ trait GoGameDef {
     def isSurrounded(component: Set[(Int, Int)]): Boolean = {
       for {
         pos <- component
-        delta <- adjacentDisplacement
-        nextPos = (pos._1 + delta._1, pos._2 + delta._2)
-        if isInsideBoard(nextPos._1, nextPos._2) && positions(nextPos._1)(nextPos._2) == Empty
+        neighborPos <- neighbors(pos._1, pos._2)
+        if isInsideBoard(neighborPos._1, neighborPos._2) && positions(neighborPos._1)(neighborPos._2) == Empty
       } return false
 
       true
