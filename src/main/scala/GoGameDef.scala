@@ -18,6 +18,8 @@ case class Move(x: Int, y: Int, piece: Piece) {
 }
 
 trait GoGameDef {
+  type Positions = Vector[Vector[Piece]]
+
   val rowCount: Int
   val colCount: Int
 
@@ -62,15 +64,14 @@ trait GoGameDef {
 
     lazy val positionsWithMovePiece = positionsWhenPlaceMove(move)
 
-    (isNextMove && isInsideBoard(move.x, move.y) && !isOccupiedPos &&
-      !isSelfCapture && !isSameAsPreviousState)
+    isNextMove && isInsideBoard(move.x, move.y) && !isOccupiedPos &&
+      !isSelfCapture && !isSameAsPreviousState
   }
 
   /**
    * Play a move on the board, captured no-liberty opponent's pieces,
    * add new board state to history
    * If a move is illegal, an IllegalArgumentException exeption will be thrown
-   * @param move
    */
   def playMove(move: Move) = {
     require(isLegalMove(move), "Illegal move")
@@ -115,7 +116,6 @@ trait GoGameDef {
     0 <= x && x < rowCount && 0 <= y && y < colCount
   }
 
-  type Positions = Vector[Vector[Piece]]
 
   /**
    * Given a board position, get all the captured pieces
@@ -125,13 +125,16 @@ trait GoGameDef {
   protected def getCapturedPieces(positions: Positions, piece: Piece): Set[(Int, Int)] = {
     require(piece != Empty)
 
+    /**
+     * Given a position (x, y), returns list of its neighbor positions
+     */
     def neighbors(x: Int, y: Int): List[(Int, Int)] = {
       val neighborDisplacement = List((-1, 0), (1, 0), (0, -1), (0, 1))
       neighborDisplacement map { case (dx, dy) => (x + dx, y + dy) }
     }
 
     /**
-     * Get all connected-components pieces, which are same type of the input piece
+     * Get all connected-pieces components, which are same type of the input piece
      */
     def connectedPieces: List[Set[(Int, Int)]] = {
 
@@ -189,17 +192,8 @@ trait GoGameDef {
   /**
    * Board state class holds the state of all positions of the board
    */
-  case class BoardState(positions: Positions, nextPiece: Piece = BlackPiece) {
+  case class BoardState(positions: Positions = Vector.fill(rowCount, colCount)(Empty), nextPiece: Piece = BlackPiece) {
     require(positions.length == rowCount && positions.head.length == colCount, "Invalid positions length")
-
-    /**
-     * Constructor to create new game's board
-     */
-    def this() = this(Vector.fill(rowCount, colCount)(Empty))
   }
 
-  /**
-   * The start board state where all positions are empty
-   */
-  object StartBoard extends BoardState
 }

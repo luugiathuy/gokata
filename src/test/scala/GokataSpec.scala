@@ -5,7 +5,7 @@ class GokataSpec extends WordSpec {
   trait NewGoGame5x5 extends GoGameDef {
     val rowCount = 5
     val colCount = 5
-    history = history :+ StartBoard
+    history = history :+ BoardState()
   }
 
   "isLegalMove()" when {
