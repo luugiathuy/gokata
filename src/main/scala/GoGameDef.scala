@@ -130,7 +130,8 @@ trait GoGameDef {
      */
     def neighbors(x: Int, y: Int): List[(Int, Int)] = {
       val neighborDisplacement = List((-1, 0), (1, 0), (0, -1), (0, 1))
-      neighborDisplacement map { case (dx, dy) => (x + dx, y + dy) }
+      neighborDisplacement.map({ case (dx, dy)  => (x + dx, y + dy)})
+        .filter({ case (i, j) => isInsideBoard(i, j) })
     }
 
     /**
@@ -159,8 +160,7 @@ trait GoGameDef {
 
           for {
             neighborPos <- neighbors(pos._1, pos._2)
-            if (isInsideBoard(neighborPos._1, neighborPos._2) && positions(neighborPos._1)(neighborPos._2) == piece
-              && !visited.contains(neighborPos))
+            if positions(neighborPos._1)(neighborPos._2) == piece && !visited.contains(neighborPos)
           } {
             queue += neighborPos
             visited += neighborPos
@@ -177,13 +177,11 @@ trait GoGameDef {
      * Whether a connected-pieces component is surrounded by enemy
      */
     def isSurrounded(component: Set[(Int, Int)]): Boolean = {
-      for {
-        pos <- component
-        neighborPos <- neighbors(pos._1, pos._2)
-        if isInsideBoard(neighborPos._1, neighborPos._2) && positions(neighborPos._1)(neighborPos._2) == Empty
-      } return false
-
-      true
+      def hasEmptyNeighbor(x: Int, y: Int): Boolean = {
+        neighbors(x, y) exists {
+          case (i, j) => positions(i)(j) == Empty }
+      }
+      !(component exists { case(x, y) => hasEmptyNeighbor(x, y) })
     }
 
     connectedPieces.filter(isSurrounded).flatten.toSet
