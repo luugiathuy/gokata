@@ -2,7 +2,7 @@
  * This trait implements a parser to define board states from a
  * graphical ASCII representation.
  *
- * When mixing in this trait, we can the `initialBoardRecord`
+ * When mixing in this trait, we can get the `initialBoardRecord`
  * by defining the field `boardASCII` in the following form:
  *
  *   val boardASCII =

@@ -1,7 +1,3 @@
-/**
- * A position on board can be occupied by BlackPiece,
- * WhitePiece, or not occupied yet (Empty)
- */
 sealed abstract class Piece {
   val opponentPiece: Piece = Empty
 }
@@ -14,10 +10,14 @@ case object WhitePiece extends Piece {
 }
 
 case class Move(x: Int, y: Int, piece: Piece) {
-  require(piece != Empty, "Invalid piece, only BlackPiece or WhitePiece")
+  require(piece != Empty, "Invalid Piece, only BlackPiece or WhitePiece")
 }
 
 trait GoGameDef {
+
+  val rowCount: Int
+  val colCount: Int
+
   type Positions = Vector[Vector[Piece]]
 
   /**
@@ -30,13 +30,10 @@ trait GoGameDef {
   }
 
   /**
-   * A record board of the game.
+   * A record of boards of the game.
    * The Stream.head is the current board
    */
   type BoardRecord = Stream[Board]
-
-  val rowCount: Int
-  val colCount: Int
 
   /**
    * Given a move and board record, check whether a move is legal.
@@ -81,13 +78,13 @@ trait GoGameDef {
   }
 
   /**
-   * Given a move and board record, play a move on the board, captured no-liberty opponent's pieces
-   * If a move is illegal, an IllegalArgumentException exeption will be thrown
+   * Given a move and board record, play a move on the board, capture no-liberty opponent's pieces
+   * If a move is illegal, an IllegalArgumentException exception will be thrown
    * @return a new board record
    */
   def playMove(move: Move, boardRecord: BoardRecord): BoardRecord = {
     require(boardRecord.nonEmpty)
-    require(isLegalMove(move, boardRecord), "Illegal move")
+    require(isLegalMove(move, boardRecord), "Illegal Move")
     val currentBoard = boardRecord.head
     val positionsWithMovePiece = positionsWhenPlaceMove(move, currentBoard.positions)
     val newPositions = removeCapturedPieces(positionsWithMovePiece, move.piece.opponentPiece)
@@ -173,8 +170,8 @@ trait GoGameDef {
         }
 
         val group = {
-          if (positions(x)(y) != piece || visited.contains((x, y))) Set.empty[(Int, Int)]
-          else findGroup(x, y)
+          if (positions(x)(y) == piece && !visited.contains((x, y))) findGroup(x, y)
+          else Set.empty[(Int, Int)]
         }
 
         val next = nextPos(x, y)
