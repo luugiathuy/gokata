@@ -2,10 +2,10 @@
  * This trait implements a parser to define board states from a
  * graphical ASCII representation.
  *
- * When mixing in this trait, a Go Game can be defined by
- * defining the field `board` in the following form:
+ * When mixing in this trait, we can the `initialBoardRecord`
+ * by defining the field `boardASCII` in the following form:
  *
- *   val board =
+ *   val boardASCII =
  *     """x
  *       |-----
  *       |--o--
@@ -22,30 +22,30 @@
  */
 trait StringParserGoGame extends GoGameDef {
 
-  val board: String
-
-  private lazy val positions: Vector[Vector[Piece]] = {
-    parseBoard(board)
-  }
+  val boardASCII: String
 
   lazy val rowCount = positions.length
   lazy val colCount = positions.head.length
 
-  def addBoardToHistory = {
-    history = {
-      val nextPiece = if (board.charAt(0) == 'o') WhitePiece else BlackPiece
-      Vector(BoardState(positions, nextPiece))
-    }
-    true
+  private lazy val positions: Positions = {
+    parseBoardPositions(boardASCII)
   }
 
-  protected def parseBoard(boardStr: String): Vector[Vector[Piece]] = {
+  protected lazy val initialBoardRecord: BoardRecord = {
+    val newBoard = {
+      val nextPiece = if (boardASCII.charAt(0) == 'o') WhitePiece else BlackPiece
+      Board(positions, nextPiece)
+    }
+    Stream(newBoard)
+  }
+
+  protected def parseBoardPositions(boardStr: String): Positions = {
     def charToPiece(c: Char) = {
       if (c == 'x') BlackPiece
       else if (c == 'o') WhitePiece
       else Empty
     }
-    Vector(board.split("\n").drop(1).map(str => Vector(str: _*).map(c => charToPiece(c))): _*)
+    Vector(boardASCII.split("\n").drop(1).map(str => Vector(str: _*)
+      .map(c => charToPiece(c))): _*)
   }
-
 }

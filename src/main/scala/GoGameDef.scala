@@ -20,33 +20,46 @@ case class Move(x: Int, y: Int, piece: Piece) {
 trait GoGameDef {
   type Positions = Vector[Vector[Piece]]
 
+  /**
+   * Board class holds the state of all positions of the board
+   */
+  case class Board(positions: Positions = Vector.fill(rowCount, colCount)(Empty),
+                   nextPiece: Piece = BlackPiece) {
+    require(positions.length == rowCount && positions.head.length == colCount,
+      "Invalid positions length")
+  }
+
+  /**
+   * A record board of the game.
+   * The Stream.head is the current board
+   */
+  type BoardRecord = Stream[Board]
+
   val rowCount: Int
   val colCount: Int
 
-  var history: Vector[BoardState] = Vector()
-
-  def currentBoardState: BoardState = history.last
-
   /**
-   * Check whether a move is legal.
+   * Given a move and board record, check whether a move is legal.
    * 1. Black places the first stone, after which White and Black alternate.
    * 2. Stones cannot be placed on occupied points.
-   * 3. No self-capture. Stones cannot be placed where they would be immediately captured (Suicide rule)
-   * 4. If placing a stone causes an opponent's stone to be captured, the opponents stones are
-   *    removed from the board before the liberties of your stone(s) are calculated
+   * 3. No self-capture. Stones cannot be placed where they would be
+   *    immediately captured (Suicide rule)
+   * 4. If placing a stone causes an opponent's stone to be captured,
+   *    the opponents stones are removed from the board before the liberties
+   *    of your stone(s) are calculated
    * 5. You cannot place a stone to put the game back in the same position as it was
    *    on your last turn (this prevents infinite loops in play) (ko rule)
    * @return true if the move is legal, false otherwise
    */
-  def isLegalMove(move: Move): Boolean = {
-    def isNextMove = move.piece == currentBoardState.nextPiece
-    def isOccupiedPos = currentBoardState.positions(move.x)(move.y) != Empty
+  def isLegalMove(move: Move, boardRecord: BoardRecord): Boolean = {
+    require(boardRecord.nonEmpty)
+    val currentBoard = boardRecord.head
+
+    def isNextMove = move.piece == currentBoard.nextPiece
+    def isOccupiedPos = currentBoard.positions(move.x)(move.y) != Empty
     def isSelfCapture = {
-      val capturedOpponentPieces = getCapturedPieces(positionsWithMovePiece, move.piece.opponentPiece)
-      if (capturedOpponentPieces.nonEmpty) {
-        // if the move captures opponent's pieces -> not self-capture move
-        false
-      }
+      val canCaptureOpponent = getCapturedPieces(positionsWithMovePiece, move.piece.opponentPiece).nonEmpty
+      if (canCaptureOpponent) false
       else {
         // if there is any captured piece of move.piece -> self-capture move
         val capturedOwnPieces = getCapturedPieces(positionsWithMovePiece, move.piece)
@@ -54,48 +67,43 @@ trait GoGameDef {
       }
     }
 
-    def isSameAsPreviousState: Boolean = {
-      if (history.size < 2) false
-      else {
+    def isSameAsPreviousState: Boolean = boardRecord match {
+      case (current#::previous#::xs) =>
         val newPosition = removeCapturedPieces(positionsWithMovePiece, move.piece.opponentPiece)
-        if (history.init.last.positions == newPosition) true else false
-      }
+        previous.positions == newPosition
+      case _ => false
     }
 
-    lazy val positionsWithMovePiece = positionsWhenPlaceMove(move)
+    lazy val positionsWithMovePiece = positionsWhenPlaceMove(move, currentBoard.positions)
 
     isNextMove && isInsideBoard(move.x, move.y) && !isOccupiedPos &&
       !isSelfCapture && !isSameAsPreviousState
   }
 
   /**
-   * Play a move on the board, captured no-liberty opponent's pieces,
-   * add new board state to history
+   * Given a move and board record, play a move on the board, captured no-liberty opponent's pieces
    * If a move is illegal, an IllegalArgumentException exeption will be thrown
+   * @return a new board record
    */
-  def playMove(move: Move) = {
-    require(isLegalMove(move), "Illegal move")
-
-    // place the move's piece
-    val positionsWithMovePiece = positionsWhenPlaceMove(move)
-
-    // remove captured opponent's pieces
+  def playMove(move: Move, boardRecord: BoardRecord): BoardRecord = {
+    require(boardRecord.nonEmpty)
+    require(isLegalMove(move, boardRecord), "Illegal move")
+    val currentBoard = boardRecord.head
+    val positionsWithMovePiece = positionsWhenPlaceMove(move, currentBoard.positions)
     val newPositions = removeCapturedPieces(positionsWithMovePiece, move.piece.opponentPiece)
-
-    history = history :+ BoardState(newPositions, move.piece.opponentPiece)
+    Board(newPositions, move.piece.opponentPiece) #:: boardRecord
   }
 
   /**
-   * Given a move, this functions returns new board's positions by
+   * Given a move and position, returns new board's positions by
    * simply placing the move's piece on its position
    */
-  private def positionsWhenPlaceMove(move: Move): Positions = {
-    val currentPositions = currentBoardState.positions
-    currentPositions.updated(move.x, currentPositions(move.x).updated(move.y, move.piece))
+  private def positionsWhenPlaceMove(move: Move, positions: Positions): Positions = {
+    positions.updated(move.x, positions(move.x).updated(move.y, move.piece))
   }
 
   /**
-   * Given a board position, and a type of piece,
+   * Given a board position, and a type of piece (BlackPiece/WhitePiece),
    * remove the captured pieces of that type from the positions
    * @return the new positions after remove captured pieces
    */
@@ -104,7 +112,7 @@ trait GoGameDef {
     val capturedPieces = getCapturedPieces(positions, piece)
     positions.zipWithIndex.map {
       case (rowPieces, i) => rowPieces.zipWithIndex.map {
-        case (piece, j) => if (capturedPieces.contains((i, j))) Empty else piece
+        case (p, j) => if (capturedPieces.contains((i, j))) Empty else p
       }
     }
   }
@@ -189,12 +197,5 @@ trait GoGameDef {
     }
 
     getGroups.filter(isSurrounded).flatten.toSet
-  }
-
-  /**
-   * Board state class holds the state of all positions of the board
-   */
-  case class BoardState(positions: Positions = Vector.fill(rowCount, colCount)(Empty), nextPiece: Piece = BlackPiece) {
-    require(positions.length == rowCount && positions.head.length == colCount, "Invalid positions length")
   }
 }
