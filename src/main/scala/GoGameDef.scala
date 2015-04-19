@@ -142,27 +142,27 @@ trait GoGameDef {
     /**
      * Get all groups which are same type of the input piece
      */
-    def getGroups: List[Set[(Int, Int)]] = {
+    def getGroups: Set[Set[(Int, Int)]] = {
 
       /**
        * Find the group where piece at (x, y) belongs to
        */
       def findGroup(x: Int, y: Int) : Set[(Int, Int)] = {
-        def visit(toVisit: Seq[(Int, Int)], visited: Set[(Int, Int)]): Set[(Int, Int)] = {
-          if (toVisit.isEmpty) Set.empty
+        def visit(toVisit: Seq[(Int, Int)], visited: Set[(Int, Int)], group: Set[(Int, Int)]): Set[(Int, Int)] = {
+          if (toVisit.isEmpty) group
           else {
             val pos = toVisit.head
             val toVisitFriendNeighbors = neighbors(pos._1, pos._2).toSeq.filter {
               case(i, j) => !visited.contains((i, j)) && positions(i)(j) == positions(pos._1)(pos._2)
             }
-            Set((pos._1, pos._2)) ++ visit(toVisit.tail ++ toVisitFriendNeighbors, visited + pos)
+            visit(toVisit.tail ++ toVisitFriendNeighbors, visited + pos, group + pos)
           }
         }
 
-        visit(Seq((x, y)), Set.empty)
+        visit(Seq((x, y)), Set.empty, Set.empty)
       }
 
-      def iterPos(x: Int, y: Int, visited: Set[(Int, Int)]): List[Set[(Int, Int)]] = {
+      def iterPos(x: Int, y: Int, visited: Set[(Int, Int)]): Set[Set[(Int, Int)]] = {
         def nextPos(x: Int, y: Int): (Int, Int) = {
           if (y < colCount - 1) (x, y + 1)
           else if (x < rowCount - 1) (x + 1, 0)
@@ -175,8 +175,8 @@ trait GoGameDef {
         }
 
         val next = nextPos(x, y)
-        if (next != null) List(group) ++ iterPos(next._1, next._2, visited ++ group)
-        else List(group)
+        if (next != null) Set(group) ++ iterPos(next._1, next._2, visited ++ group)
+        else Set(group)
       }
 
       iterPos(0, 0, Set.empty)
@@ -193,6 +193,6 @@ trait GoGameDef {
       !(group exists { case(x, y) => hasEmptyNeighbor(x, y) })
     }
 
-    getGroups.filter(isSurrounded).flatten.toSet
+    getGroups.filter(isSurrounded).flatten
   }
 }
