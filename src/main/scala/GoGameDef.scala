@@ -162,7 +162,7 @@ trait GoGameDef {
         visit(Seq((x, y)), Set.empty, Set.empty)
       }
 
-      def iterPos(x: Int, y: Int, visited: Set[(Int, Int)]): Set[Set[(Int, Int)]] = {
+      def iterPos(x: Int, y: Int, visited: Set[(Int, Int)], groups: Set[Set[(Int, Int)]]): Set[Set[(Int, Int)]] = {
         def nextPos(x: Int, y: Int): (Int, Int) = {
           if (y < colCount - 1) (x, y + 1)
           else if (x < rowCount - 1) (x + 1, 0)
@@ -174,12 +174,13 @@ trait GoGameDef {
           else Set.empty[(Int, Int)]
         }
 
-        val next = nextPos(x, y)
-        if (next != null) Set(group) ++ iterPos(next._1, next._2, visited ++ group)
-        else Set(group)
+        nextPos(x, y) match {
+          case (i, j) => iterPos(i, j, visited ++ group, groups + group)
+          case _ => groups + group
+        }
       }
 
-      iterPos(0, 0, Set.empty)
+      iterPos(0, 0, Set.empty, Set.empty)
     }
 
     /**
